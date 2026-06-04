@@ -1,0 +1,61 @@
+{% load i18n %}
+
+<nav class="checkout-progress" aria-label="{% trans 'Checkout progress' %}">
+    <ol class="checkout-progress-list">
+        <li class="checkout-progress-item step1 {% if step == 1 %}active{% else %}{% if step == 2 %}previous{% else %}{% if step > 1 %}visited{% else %}disabled{% endif %}{% endif %}{% endif %}">
+            {% if step == 2 or step == 3 or step == 4 %}
+                <a href="{% url 'checkout:shipping-address' %}" class="checkout-progress-link">
+                    <span class="checkout-progress-index">1</span>
+                    <span>{% trans "Shipping address" %}</span>
+                </a>
+            {% else %}
+                <span class="checkout-progress-label">
+                    <span class="checkout-progress-index">1</span>
+                    <span>{% trans "Shipping address" %}</span>
+                </span>
+            {% endif %}
+        </li>
+
+        <li class="checkout-progress-item step2 {% if step == 2 %}active{% else %}{% if step == 3 %}previous{% else %}{% if step > 2 %}visited{% else %}disabled{% endif %}{% endif %}{% endif %}">
+            {% if step == 3 or step == 4 %}
+                <a href="{% url 'checkout:shipping-method' %}" class="checkout-progress-link">
+                    <span class="checkout-progress-index">2</span>
+                    <span>{% trans "Shipping method" %}</span>
+                </a>
+            {% else %}
+                <span class="checkout-progress-label">
+                    <span class="checkout-progress-index">2</span>
+                    <span>{% trans "Shipping method" %}</span>
+                </span>
+            {% endif %}
+        </li>
+
+        <li class="checkout-progress-item step3 {% if step == 3 %}active{% else %}{% if step == 4 %}previous{% else %}{% if step > 3 %}visited{% else %}disabled{% endif %}{% endif %}{% endif %}">
+            {% if step == 4 %}
+                <a href="{% url 'checkout:payment-details' %}" class="checkout-progress-link">
+                    <span class="checkout-progress-index">3</span>
+                    <span>{% trans "Payment" %}</span>
+                </a>
+            {% else %}
+                <span class="checkout-progress-label">
+                    <span class="checkout-progress-index">3</span>
+                    <span>{% trans "Payment" %}</span>
+                </span>
+            {% endif %}
+        </li>
+
+        <li class="checkout-progress-item step4 {% if step == 4 %}active{% else %}disabled{% endif %}">
+            <span class="checkout-progress-label">
+                <span class="checkout-progress-index">4</span>
+                <span>{% trans "Preview" %}</span>
+            </span>
+        </li>
+
+        <li class="checkout-progress-item step5 {% if step == 5 %}active{% else %}disabled{% endif %}">
+            <span class="checkout-progress-label">
+                <span class="checkout-progress-index">5</span>
+                <span>{% trans "Confirmation" %}</span>
+            </span>
+        </li>
+    </ol>
+</nav>

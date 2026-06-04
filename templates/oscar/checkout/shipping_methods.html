@@ -1,0 +1,157 @@
+{% extends "oscar/checkout/checkout.html" %}
+
+{% load currency_filters %}
+{% load i18n %}
+{% load react_assets %}
+{% load shipping_tags %}
+{% load static %}
+
+{% block title %}
+    {% trans "Shipping method" %} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Checkout" %}</li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Shipping method" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block checkout_nav %}
+    {% include 'oscar/checkout/nav.html' with step=2 %}
+{% endblock %}
+
+{% block checkout_title %}{% trans "Shipping method" %}{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/checkout-shipping-method.tsx" as react_shipping_method_css %}
+    {% for href in react_shipping_method_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block order_contents %}{% endblock %}
+{% block shipping_address %}{% endblock %}
+{% block payment_method %}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/checkout-shipping-methods.css' %}">
+{% endblock %}
+
+{% block shipping_method %}
+    {% with shipping_method_code=shipping_method.code|default:"" %}
+    {% with selected_method_code=form.method_code.value|default:shipping_method_code %}
+        <script type="application/json" id="react-shipping-method-data">
+            [
+                {% for method in methods %}
+                    {% shipping_charge method basket as charge %}
+                    {
+                        "code": "{{ method.code|escapejs }}",
+                        "name": "{{ method.name|striptags|escapejs }}",
+                        "description": "{{ method.description|default:''|striptags|escapejs }}",
+                        "cost": "{% if charge.is_tax_known %}{{ charge.incl_tax|currency:basket.currency|escapejs }}{% else %}{{ charge.excl_tax|currency:basket.currency|escapejs }}{% endif %}"
+                    }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        </script>
+
+        <div
+            id="react-shipping-method-root"
+            class="mb-12"
+            data-action-url="{% url 'checkout:shipping-method' %}"
+            data-csrf-token="{{ csrf_token }}"
+            data-initial-code="{{ selected_method_code }}"
+            data-options-script-id="react-shipping-method-data"
+            data-fallback-target-id="shipping-method-legacy-form"
+            data-server-error="{{ form.method_code.errors|join:' ' }}"
+        ></div>
+
+        <div id="shipping-method-legacy-form" class="space-y-6">
+            <form method="post" action="{% url 'checkout:shipping-method' %}" class="space-y-6">
+                {% csrf_token %}
+
+                {% if form.is_bound and not form.is_valid %}
+                    <div class="rounded-artisan border border-accent-red/30 bg-accent-red/10 p-4 text-sm text-primary-red font-bold italic shadow-sm">
+                        <strong>{% trans "Oops! We found some errors" %}</strong> - {% trans "please check the error messages below and try again" %}
+                    </div>
+                {% endif %}
+
+                <div class="rounded-artisan border border-gold-accent/20 bg-white overflow-hidden shadow-artisan-sm">
+                    <div class="bg-background-warm/30 px-6 py-4 border-b border-gold-accent/10 flex justify-between items-center">
+                        <h4 class="font-display text-xl text-text-primary italic m-0">{% trans "Método" %}</h4>
+                        <h4 class="font-display text-xl text-text-primary italic m-0">{% trans "Costo" %}</h4>
+                    </div>
+
+                    <div class="divide-y divide-gold-accent/10">
+                        {% for method in methods %}
+                            <div class="px-6 py-6 hover:bg-background-warm/10 transition-colors">
+                                <label for="method_{{ forloop.counter }}" class="flex items-center justify-between cursor-pointer group">
+                                    <div class="flex items-start gap-4">
+                                        <div class="pt-1">
+                                            <input
+                                                type="radio"
+                                                name="method_code"
+                                                id="method_{{ forloop.counter }}"
+                                                value="{{ method.code }}"
+                                                class="w-5 h-5 accent-primary-red"
+                                                {% if method.code == selected_method_code %}checked{% endif %}
+                                            />
+                                        </div>
+                                        <div class="space-y-1">
+                                            <strong class="font-display text-lg text-text-primary group-hover:text-primary-red transition-colors">{{ method.name }}</strong>
+                                            {% if method.description %}
+                                                <div class="text-sm font-body italic text-text-secondary leading-relaxed">
+                                                    {{ method.description|safe }}
+                                                </div>
+                                            {% endif %}
+                                            {% if method.is_discounted %}
+                                                <div class="inline-block mt-2 rounded-artisan bg-green-dark/5 border border-green-dark/20 px-3 py-1 text-[10px] font-bold text-green-dark uppercase tracking-widest">
+                                                    {% shipping_charge_discount method basket as discount %}
+                                                    {% blocktrans with amount=discount|currency:basket.currency name=method.discount_name %}
+                                                        Incluye un descuento de <strong>{{ amount }}</strong> por la oferta <strong>{{ name }}</strong>.
+                                                    {% endblocktrans %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="font-display text-xl font-bold text-primary-red">
+                                        {% shipping_charge method basket as charge %}
+                                        {% if charge.is_tax_known %}
+                                            {{ charge.incl_tax|currency:basket.currency }}
+                                        {% else %}
+                                            {{ charge.excl_tax|currency:basket.currency }}
+                                        {% endif %}
+                                    </div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4">
+                    <button type="submit" class="bg-primary-red text-background-cream px-10 py-4 rounded-artisan font-display font-bold uppercase tracking-widest hover:bg-secondary-red transition-all shadow-artisan-md active:scale-95">
+                        {% trans "Continuar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    {% endwith %}
+    {% endwith %}
+
+    <script src="{% static 'js/checkout-shipping-methods.js' %}"></script>
+{% endblock shipping_method %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/checkout-shipping-method.tsx" as react_shipping_method_js %}
+    {% if react_shipping_method_js %}
+        <script type="module" src="{{ react_shipping_method_js }}"></script>
+    {% endif %}
+{% endblock %}

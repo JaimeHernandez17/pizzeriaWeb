@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env
+
+# Project
+media/
+staticfiles/
+static/
+node_modules/
+frontend/node_modules/
+.junie/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

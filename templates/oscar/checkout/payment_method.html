@@ -1,0 +1,42 @@
+{% extends "oscar/checkout/checkout.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans "Método de pago" %} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Checkout" %}</li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Payment method" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block checkout_nav %}
+    {% include 'oscar/checkout/nav.html' with step=3 %}
+{% endblock %}
+
+{% block checkout_title %}{% trans "Elige tu método de pago" %}{% endblock %}
+
+{% block payment_method %}{% endblock %}
+
+{% block payment_details %}
+    <div class="card card-body bg-light">
+        <form method="post" action="{% url 'checkout:payment-method' %}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="form-group">
+                {{ form.payment_method.errors }}
+                {{ form.payment_method }}
+            </div>
+            <button class="btn btn-primary btn-lg" type="submit">
+                {% trans "Continuar" %}
+            </button>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load i18n %}
+{% load currency_filters %}
+
+{% block title %}
+    {% trans "Seguimiento de Pedido" %} #{{ order.number }} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Checkout" %}</li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Order Tracking" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block content %}
+<section class="checkout-tracking-page">
+    <article class="checkout-tracking-card">
+        <header class="checkout-tracking-header">
+            <h1>{% trans "Estado de tu Pedido" %} #{{ order.number }}</h1>
+            <span class="checkout-status-pill">{{ order.status }}</span>
+        </header>
+
+        {% with status=order.status %}
+            <div class="checkout-tracking-progress">
+                <div class="checkout-tracking-progress-top">
+                    <p>{% trans "Seguimiento en tiempo real" %}</p>
+                </div>
+
+                <div
+                    class="checkout-tracking-line"
+                    role="progressbar"
+                    aria-label="{% trans 'Progreso del pedido' %}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="{% if status == 'Entregado' %}100{% elif status == 'En camino' %}75{% elif status == 'Preparando' %}50{% elif status == 'Pagado' %}25{% else %}0{% endif %}"
+                >
+                    <span class="checkout-tracking-line-fill
+                        {% if status == 'Entregado' %}progress-100
+                        {% elif status == 'En camino' %}progress-75
+                        {% elif status == 'Preparando' %}progress-50
+                        {% elif status == 'Pagado' %}progress-25
+                        {% else %}progress-0{% endif %}
+                    "></span>
+                </div>
+
+                <ol class="checkout-tracking-steps">
+                    <li class="is-done">
+                        <span class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                        </span>
+                        <span class="step-dot"></span>
+                        <span class="step-label">{% trans "Recibido" %}</span>
+                    </li>
+                    <li class="{% if status == 'Pagado' %}is-current{% elif status == 'Preparando' or status == 'En camino' or status == 'Entregado' %}is-done{% endif %}">
+                        <span class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                        </span>
+                        <span class="step-dot"></span>
+                        <span class="step-label">{% trans "Pagado" %}</span>
+                    </li>
+                    <li class="{% if status == 'Preparando' %}is-current{% elif status == 'En camino' or status == 'Entregado' %}is-done{% endif %}">
+                        <span class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
+                        </span>
+                        <span class="step-dot"></span>
+                        <span class="step-label">{% trans "Preparando" %}</span>
+                    </li>
+                    <li class="{% if status == 'En camino' %}is-current{% elif status == 'Entregado' %}is-done{% endif %}">
+                        <span class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+                        </span>
+                        <span class="step-dot"></span>
+                        <span class="step-label">{% trans "En camino" %}</span>
+                    </li>
+                    <li class="{% if status == 'Entregado' %}is-current is-done{% endif %}">
+                        <span class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
+                        </span>
+                        <span class="step-dot"></span>
+                        <span class="step-label">{% trans "Entregado" %}</span>
+                    </li>
+                </ol>
+
+                <p class="checkout-tracking-stage">
+                    {% trans "Fase actual:" %}
+                    <strong>{% if status %}{{ status }}{% else %}{% trans "Recibido" %}{% endif %}</strong>
+                </p>
+            </div>
+        {% endwith %}
+
+        <div class="checkout-tracking-grid">
+            <section class="checkout-tracking-panel">
+                <h2>{% trans "Resumen de productos" %}</h2>
+                <ul class="checkout-line-items">
+                    {% for line in order.lines.all %}
+                        <li>
+                            <div>
+                                <strong>{{ line.quantity }} x {{ line.title }}</strong>
+                                {% if line.description %}
+                                    <p>{{ line.description }}</p>
+                                {% endif %}
+                            </div>
+                            <span>{{ line.line_price_incl_tax|currency:order.currency }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <aside class="checkout-tracking-panel">
+                <h2>{% trans "Detalles de entrega" %}</h2>
+                <p class="tracking-caption"><strong>{% trans "Dirección:" %}</strong></p>
+                <address>
+                    {{ order.shipping_address.full_name }}<br>
+                    {{ order.shipping_address.line1 }}<br>
+                    {% if order.shipping_address.line2 %}{{ order.shipping_address.line2 }}<br>{% endif %}
+                    {{ order.shipping_address.line4 }}
+                </address>
+
+                <div class="checkout-tracking-total">
+                    <span>{% trans "Total:" %}</span>
+                    <span>{{ order.total_incl_tax|currency:order.currency }}</span>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="checkout-tracking-footer">
+            <p>{% trans "Esta página se actualiza automáticamente cuando cambia el estado de tu pedido." %}</p>
+            <a href="{% url 'catalogue:index' %}" class="btn btn-secondary">{% trans "Volver a la tienda" %}</a>
+        </footer>
+    </article>
+</section>
+
+<script>
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

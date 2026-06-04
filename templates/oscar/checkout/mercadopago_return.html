@@ -1,0 +1,76 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans "Confirmación de pago" %} | {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    <section class="checkout-status-page">
+        {% if status == 'approved' or status == 'success' %}
+            <article class="checkout-status-card is-success">
+                <h2 class="h4">{% trans "¡Pago exitoso!" %}</h2>
+                <p>{% trans "Tu pago ha sido procesado correctamente. En breve recibirás un correo con la confirmación de tu pedido." %}</p>
+                {% if payment_id %}
+                    <p class="checkout-status-meta">{% trans "Referencia de pago:" %} {{ payment_id }}</p>
+                {% endif %}
+
+                <div id="redirect-animation" class="checkout-status-loader">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="sr-only">{% trans "Cargando..." %}</span>
+                    </div>
+                </div>
+                <p class="checkout-status-hint">{% trans "Redirigiéndote al seguimiento de tu pedido..." %}</p>
+            </article>
+
+            {% if order_number %}
+                <script>
+                    setTimeout(function() {
+                        window.location.href = "{% url 'order-tracking' order_number=order_number %}";
+                    }, 3000);
+                </script>
+            {% else %}
+                <p>{% trans "Estamos terminando de procesar tu pedido. Si no eres redirigido, puedes volver al catálogo." %}</p>
+                <script>
+                    // Reintentar si el webhook aún no ha creado el pedido
+                    setTimeout(function() {
+                        location.reload();
+                    }, 5000);
+                </script>
+            {% endif %}
+
+        {% elif status == 'pending' or status == 'in_process' %}
+            <article class="checkout-status-card is-warning">
+                <h2 class="h4">{% trans "Estamos confirmando tu pago" %}</h2>
+                <p>{% trans "Tu pago está pendiente de confirmación. Una vez Mercado Pago lo apruebe, tu pedido se creará automáticamente." %}</p>
+                <p class="checkout-status-hint">{% trans "Puedes cerrar esta ventana, te avisaremos por correo." %}</p>
+            </article>
+        {% elif status == 'failure' or status == 'rejected' or status == 'cancelled' %}
+            <article class="checkout-status-card is-danger">
+                <h2 class="h4">{% trans "El pago no pudo completarse" %}</h2>
+                <p>{% trans "Ha ocurrido un inconveniente con tu pago. Te redirigiremos para que intentes con otro método." %}</p>
+                <div class="checkout-status-loader">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="sr-only">{% trans "Redirigiendo..." %}</span>
+                    </div>
+                </div>
+            </article>
+            <script>
+                setTimeout(function() {
+                    window.location.href = "{% url 'checkout:payment-details' %}";
+                }, 5000);
+            </script>
+        {% else %}
+            <article class="checkout-status-card">
+                <h2 class="h4">{% trans "Estamos confirmando tu pago" %}</h2>
+                <p>{% trans "Una vez Mercado Pago confirme la transacción, tu pedido se creará y recibirás un correo de confirmación." %}</p>
+            </article>
+        {% endif %}
+
+        <div class="checkout-status-actions">
+            <a href="{% url 'catalogue:index' %}" class="btn btn-secondary">
+                {% trans "Ir al catálogo" %}
+            </a>
+        </div>
+    </section>
+{% endblock %}

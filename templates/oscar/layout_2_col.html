@@ -1,0 +1,21 @@
+{% extends "oscar/layout.html" %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-12">
+    <aside class="lg:w-1/4">
+        <div class="sticky top-24 space-y-8">
+            {% block column_left %}{% endblock %}
+        </div>
+    </aside>
+    <div class="lg:w-3/4">
+        {% block header %}{% endblock %}
+        {% block subnavigation %}{% endblock %}
+        {% block subcontent %}{% endblock %}
+        
+        {# Por si el contenido viene directamente en 'content' en lugar de 'subcontent' #}
+        {% if not block.subcontent %}
+            {{ block.super }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

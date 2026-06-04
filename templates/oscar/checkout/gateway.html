@@ -1,0 +1,109 @@
+{% extends "oscar/checkout/layout.html" %}
+
+{% load i18n %}
+{% load react_assets %}
+{% load widget_tweaks %}
+
+{% block title %}
+    {% trans "Checkout gateway" %} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Checkout" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block checkout_nav %}
+    {% include "oscar/checkout/nav.html" with step=0 %}
+{% endblock %}
+
+{% block checkout_title %}{% trans "Who are you?" %}{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/checkout-gateway.tsx" as react_checkout_gateway_css %}
+    {% for href in react_checkout_gateway_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block content %}
+    <div
+        id="react-checkout-gateway-root"
+        class="mb-4"
+        data-action-url="{% url 'checkout:index' %}"
+        data-csrf-token="{{ csrf_token }}"
+        data-password-reset-url="{% url 'password-reset' %}"
+        data-initial-email="{{ form.username.value|default_if_none:'' }}"
+        data-initial-option="{{ form.options.value|default:'anonymous' }}"
+        data-fallback-target-id="checkout-gateway-legacy-form"
+        data-server-error="{{ form.non_field_errors|join:' ' }} {{ form.username.errors|join:' ' }} {{ form.password.errors|join:' ' }} {{ form.options.errors|join:' ' }}"
+    ></div>
+
+    <div id="checkout-gateway-legacy-form">
+        <form method="post" class="card card-body bg-light">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            {% include "oscar/partials/form_field.html" with field=form.username %}
+
+            <div class="form-group">
+                <div class="controls">
+                    <div class="radio">
+                        {{ form.options.0 }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group {% if form.password.errors %}error{% endif %}">
+                {{ form.options.errors }}
+                <div class="controls">
+                    <div class="radio">
+                        {{ form.options.2 }}
+                        <div class="form-inline">
+                            {% render_field form.password class+="form-control mr-sm-2" %}
+                            <small><a href="{% url 'password-reset' %}" tabindex="-1">{% trans "Get a password reminder" %}</a></small>
+                            {% for error in form.password.errors %}
+                                <span class="error-block">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="controls">
+                    <div class="radio">
+                        {{ form.options.1 }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-lg btn-block btn-primary" data-loading-text="{% trans 'Continuing...' %}">{% trans "Continue" %}</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock content %}
+
+{% block onbodyload %}
+    {{ block.super }}
+    oscar.checkout.gateway.init();
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/checkout-gateway.tsx" as react_checkout_gateway_js %}
+    {% if react_checkout_gateway_js %}
+        <script type="module" src="{{ react_checkout_gateway_js }}"></script>
+    {% endif %}
+{% endblock %}

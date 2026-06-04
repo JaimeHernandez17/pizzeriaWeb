@@ -1,0 +1,50 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans "Confirmación de pago" %} | {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    <section class="checkout-status-page">
+        {% if order_number %}
+            <article class="checkout-status-card is-success">
+                <h2 class="h4">{% trans "¡Pago exitoso!" %}</h2>
+                <p>{% trans "Tu pago ha sido procesado correctamente." %}</p>
+                <div id="redirect-animation" class="checkout-status-loader">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="sr-only">{% trans "Cargando..." %}</span>
+                    </div>
+                </div>
+                <p class="checkout-status-hint">{% trans "Redirigiéndote al seguimiento de tu pedido..." %}</p>
+            </article>
+            <script>
+                setTimeout(function() {
+                    window.location.href = "{% url 'order-tracking' order_number=order_number %}";
+                }, 3000);
+            </script>
+        {% else %}
+            <article class="checkout-status-card is-warning">
+                <h2 class="h4">{% trans "Estamos confirmando tu pago" %}</h2>
+                <p>{% trans "Una vez Wompi confirme la transacción, tu pedido se creará y recibirás un correo de confirmación." %}</p>
+                <div class="checkout-status-loader">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="sr-only">{% trans "Procesando..." %}</span>
+                    </div>
+                </div>
+                <p class="checkout-status-hint">{% trans "Estamos validando el pago, esta página se actualizará automáticamente." %}</p>
+            </article>
+            <script>
+                setTimeout(function() {
+                    location.reload();
+                }, 5000);
+            </script>
+        {% endif %}
+
+        <div class="checkout-status-actions">
+            <a href="{% url 'catalogue:index' %}" class="btn btn-secondary">
+                {% trans "Volver al inicio" %}
+            </a>
+        </div>
+    </section>
+{% endblock %}

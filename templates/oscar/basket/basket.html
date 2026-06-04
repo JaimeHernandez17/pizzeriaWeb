@@ -1,0 +1,60 @@
+{% extends "oscar/layout.html" %}
+{% load i18n %}
+{% load react_assets %}
+
+{% block title %}
+    {% trans "Basket" %} | {{ block.super }}
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/cart.tsx" as react_cart_css %}
+    {% for href in react_cart_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Basket" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block mini_basket %}{% endblock %}
+
+{% block headertext %}{% endblock %}
+
+{% block content %}
+    <div
+        id="react-cart-root"
+        class="mb-4"
+        data-api-url="{% url 'api-cart-detail' %}"
+        data-checkout-url="{% url 'checkout:index' %}"
+        data-continue-url="{{ homepage_url }}"
+        data-fallback-target-id="basket-legacy-content"
+    ></div>
+
+    <div id="basket-legacy-content">
+        {% include "oscar/basket/partials/basket_content.html" %}
+    </div>
+{% endblock content %}
+
+{% block onbodyload %}
+    {{ block.super }}
+    var options = {
+        'basketURL': '{% url 'basket:summary' %}'
+    };
+    oscar.basket.init(options);
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/cart.tsx" as react_cart_js %}
+    {% if react_cart_js %}
+        <script type="module" src="{{ react_cart_js }}"></script>
+    {% endif %}
+{% endblock %}

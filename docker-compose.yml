@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME:-pizzeria_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-1234j}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    volumes:
+      - .:/app
+      - /app/.venv
+      - /app/static/frontend
+    ports:
+      - "8049:8049"
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-default-change-me-in-production}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-True}
+      - DJANGO_SECURE_SSL_REDIRECT=${DJANGO_SECURE_SSL_REDIRECT:-False}
+      - DB_NAME=${DB_NAME:-pizzeria_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-1234j}
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

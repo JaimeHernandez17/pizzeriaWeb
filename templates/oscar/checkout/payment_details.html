@@ -1,0 +1,152 @@
+{% extends "oscar/checkout/checkout.html" %}
+{% load i18n %}
+{% load react_assets %}
+{% load currency_filters %}
+
+{% block title %}
+    {% trans "Detalles de pago" %} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Checkout" %}</li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Payment" %}</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block body_class %}checkout-payment-details{% endblock %}
+
+{% block checkout_nav %}
+    {% include 'oscar/checkout/nav.html' with step=3 %}
+{% endblock %}
+
+{% block checkout_title %}{% trans "Pago" %}{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/checkout-payment-method.tsx" as react_checkout_payment_css %}
+    {% for href in react_checkout_payment_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block order_contents %}{% endblock %}
+{% block shipping_address %}{% endblock %}
+{% block payment_method %}{% endblock %}
+
+{% block payment_details %}
+    <section class="checkout-payment-grid">
+        <div class="checkout-payment-main">
+            <div
+                id="react-payment-method-root"
+                class="mb-4"
+                data-action-url="{% url 'checkout:payment-details' %}"
+                data-csrf-token="{{ csrf_token }}"
+                data-initial-method="{{ payment_method_form.payment_method.value|default:selected_payment_method }}"
+                data-fallback-target-id="payment-method-legacy-form"
+                data-server-error="{{ payment_method_form.non_field_errors|join:' ' }} {{ payment_method_form.payment_method.errors|join:' ' }}"
+            ></div>
+
+            <div id="payment-method-legacy-form">
+                <div class="card card-body bg-light mb-3">
+                    <h3 class="h5">{% trans "Método de pago" %}</h3>
+                    <form method="post" action="{% url 'checkout:payment-details' %}" id="payment-method-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="set_method" />
+                        {{ payment_method_form.non_field_errors }}
+                        <div class="form-group">
+                            {{ payment_method_form.payment_method.errors }}
+                            {{ payment_method_form.payment_method }}
+                        </div>
+                        <button class="btn btn-primary" type="submit">
+                            {% trans "Continuar" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <aside class="checkout-summary-card">
+            <h3>{% trans "Resumen de compra" %}</h3>
+
+            <dl class="checkout-summary-list">
+                <div class="checkout-summary-row">
+                    <dt>{% trans "Productos" %}</dt>
+                    <dd>{{ basket.num_items }}</dd>
+                </div>
+
+                <div class="checkout-summary-row">
+                    <dt>{% trans "Subtotal" %}</dt>
+                    <dd>
+                        {% if basket.is_tax_known and not show_tax_separately %}
+                            {{ basket.total_incl_tax|currency:basket.currency }}
+                        {% else %}
+                            {{ basket.total_excl_tax|currency:basket.currency }}
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <div class="checkout-summary-row">
+                    <dt>{% trans "Envío" %}</dt>
+                    <dd>
+                        {% if shipping_charge %}
+                            {% if shipping_charge.is_tax_known and not show_tax_separately %}
+                                {{ shipping_charge.incl_tax|currency:basket.currency }}
+                            {% else %}
+                                {{ shipping_charge.excl_tax|currency:basket.currency }}
+                            {% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <div class="checkout-summary-row total">
+                    <dt>{% trans "Total" %}</dt>
+                    <dd>
+                        {% if order_total and order_total.is_tax_known %}
+                            {{ order_total.incl_tax|currency:basket.currency }}
+                        {% elif order_total %}
+                            {{ order_total.excl_tax|currency:basket.currency }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+
+            {% if shipping_method %}
+                <div class="checkout-summary-block">
+                    <h4>{% trans "Método de envío" %}</h4>
+                    <p>{{ shipping_method.name }}</p>
+                </div>
+            {% endif %}
+
+            {% if shipping_address %}
+                <div class="checkout-summary-block">
+                    <h4>{% trans "Dirección" %}</h4>
+                    <address>
+                        {% for field in shipping_address.active_address_fields %}
+                            {{ field }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </address>
+                </div>
+            {% endif %}
+        </aside>
+    </section>
+
+    <div id="payment-method-end"></div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/checkout-payment-method.tsx" as react_checkout_payment_js %}
+    {% if react_checkout_payment_js %}
+        <script type="module" src="{{ react_checkout_payment_js }}"></script>
+    {% endif %}
+{% endblock %}

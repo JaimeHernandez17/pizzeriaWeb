@@ -1,0 +1,140 @@
+{% extends "oscar/layout_2_col.html" %}
+
+{% load currency_filters %}
+{% load product_tags %}
+{% load i18n %}
+
+{% block title %}
+    "{{ query }}" | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item">
+                <a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a>
+            </li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item">
+                {% trans "Search" %}
+            </li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">"{{ query }}"</li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block column_left %}
+    {% if has_facets %}
+        <h4>{% trans "Refine your search" %}</h4>
+        <dl>
+            {% for field, data in facet_data.items %}
+                {% if data.results %}
+                    {% include 'oscar/search/partials/facet.html' with name=data.name items=data.results %}
+                {% endif %}
+            {% endfor %}
+        </dl>
+    {% endif %}
+{% endblock %}
+
+{% block headertext %}
+    {% blocktrans with q=query %}
+        Products matching "{{ q }}"
+    {% endblocktrans %}
+{% endblock %}
+
+{% block content %}
+    {% with page=page|default:page_obj %}
+    {% with results=page.object_list|default:object_list %}
+    {% with hide_price_for_children=True %}
+    <form method="get">
+        {# Render other search params as hidden inputs #}
+        {% for value in selected_facets %}
+            <input type="hidden" name="selected_facets" value="{{ value }}" />
+        {% endfor %}
+        <input type="hidden" name="q" value="{{ search_form.q.value }}" />
+
+        {% if paginator.count %}
+            {% if paginator.count == 1 and results %}
+                {% with first_result=results.0 %}
+                    {% if first_result.object %}
+                        {% with product=first_result.object %}
+                            <p>
+                                {% trans "Found 1 result:" %}
+                                <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                            </p>
+                        {% endwith %}
+                    {% else %}
+                        {% with product=first_result %}
+                            <p>
+                                {% trans "Found 1 result:" %}
+                                <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                            </p>
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                {% if paginator.num_pages > 1 %}
+                    {% blocktrans with start=page.start_index end=page.end_index num_results=paginator.count %}
+                        Found <strong>{{ num_results }}</strong> results, showing <strong>{{ start }}</strong> to <strong>{{ end }}</strong>.
+                    {% endblocktrans %}
+                {% else %}
+                    {% blocktrans count num_results=paginator.count %}
+                        Found <strong>{{ num_results }}</strong> result.
+                    {% plural %}
+                        Found <strong>{{ num_results }}</strong> results.
+                    {% endblocktrans %}
+                {% endif %}
+            {% endif %}
+            <div class="float-right">
+                {% include "oscar/partials/form_field.html" with field=search_form.sort_by %}
+            </div>
+        {% else %}
+            <p>
+                {% trans "Found <strong>0</strong> results." %}
+                {% if suggestion %}
+                    {% url 'search:search' as search_url %}
+                    {% blocktrans %}
+                        Did you mean <a href="{{ search_url }}?q={{ suggestion }}">"{{ suggestion }}"</a>?
+                    {% endblocktrans %}
+                {% endif %}
+            </p>
+        {% endif %}
+    </form>
+
+    {% if results %}
+        <section>
+            <div>
+                <ol class="row list-unstyled ml-0 pl-0">
+                    {% for result in results %}
+                        {% if result.object %}
+                            {% with product=result.object %}
+                                <li class="col-sm-4 col-md-3 col-lg-3">
+                                    <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                                    {% render_product product %}
+                                </li>
+                            {% endwith %}
+                        {% else %}
+                            {% with product=result %}
+                                <li class="col-sm-4 col-md-3 col-lg-3">
+                                    <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                                    {% render_product product %}
+                                </li>
+                            {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+                {% include "oscar/partials/pagination.html" with page_obj=page %}
+            </div>
+        </section>
+    {% endif %}
+
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+{% endblock %}
+
+{% block onbodyload %}
+    {{ block.super }}
+    oscar.search.init();
+{% endblock %}

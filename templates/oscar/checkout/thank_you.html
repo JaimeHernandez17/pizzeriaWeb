@@ -1,0 +1,395 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load currency_filters %}
+{% load i18n %}
+{% load image_tags %}
+{% load static %}
+
+{% block title %}
+    {% blocktrans with number=order.number %}
+        Pedido {{ number }}: confirmado
+    {% endblocktrans %} | {{ block.super }}
+{% endblock title %}
+
+{% block checkout_nav %}
+{% endblock %}
+
+{% block checkout_title %}
+    {% trans "¡Gracias por tu pedido!" %}
+{% endblock %}
+
+{% block content %}
+    <div class="checkout-status-page py-6">
+        <!-- Success Card -->
+        <div class="checkout-status-card is-success mb-10 border-0 shadow-lg !bg-white">
+            <div class="flex flex-col items-center justify-center p-8 space-y-4">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center shadow-inner animate-bounce">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">{% trans "¡Pedido Recibido!" %}</h2>
+                    <p class="text-lg text-gray-600 max-w-md mx-auto">
+                        {% blocktrans with number=order.number %}
+                        Hemos enviado un correo de confirmación a tu bandeja de entrada. Tu número de pedido es <span class="text-red-600 font-bold">#{{ number }}</span>.
+                        {% endblocktrans %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <!-- Shipping Info -->
+            <div class="checkout-shell shadow-sm hover:shadow-md transition-shadow duration-300 !bg-white/80 border-gray-100">
+                <div class="sub-header flex items-center gap-2 mb-4 border-b pb-2">
+                    <div class="p-2 bg-gray-100 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold m-0">{% trans "Entrega" %}</h2>
+                </div>
+                
+                {% if order.shipping_address %}
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">{% trans "Dirección" %}</h3>
+                            <address class="not-italic text-gray-800 leading-relaxed">
+                                {% for field in order.shipping_address.active_address_fields %}
+                                    {{ field }}<br/>
+                                {% endfor %}
+                            </address>
+                        </div>
+
+                        {% if order.shipping_address.phone_number %}
+                            <div>
+                                <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-1">{% trans "Contacto" %}</h3>
+                                <p class="text-gray-800">
+                                    <span class="text-gray-500 font-medium">{% trans "Teléfono" %}:</span> {{ order.shipping_address.phone_number }}
+                                    {% if order.guest_email %}
+                                        <br/><span class="text-gray-500 font-medium">{% trans "Email" %}:</span> {{ order.guest_email }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        {% if order.shipping_address.notes %}
+                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                                <h3 class="text-xs uppercase tracking-widest text-yellow-700 font-bold mb-1">{% trans "Notas" %}</h3>
+                                <p class="text-yellow-800 italic text-sm m-0">{{ order.shipping_address.notes|linebreaks }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 italic">{% trans "No se requiere dirección de envío." %}</p>
+                {% endif %}
+
+                <div class="mt-4 pt-4 border-t border-gray-50">
+                    <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-1">{% trans "Método" %}</h3>
+                    <p class="text-gray-800 font-bold text-lg m-0">{{ order.shipping_method }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Info -->
+            <div class="checkout-shell shadow-sm hover:shadow-md transition-shadow duration-300 !bg-white/80 border-gray-100">
+                <div class="sub-header flex items-center gap-2 mb-4 border-b pb-2">
+                    <div class="p-2 bg-gray-100 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold m-0">{% trans "Pago" %}</h2>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">{% trans "Resumen de pago" %}</h3>
+                        {% for source in order.sources.all %}
+                            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <p class="text-gray-800 font-bold text-lg mb-0">
+                                    {{ source.amount_allocated|currency:source.currency }}
+                                </p>
+                                <p class="text-gray-500 text-sm m-0">
+                                    {{ source.source_type.name }}
+                                    {% if source.reference %}
+                                        <span class="block text-xs mt-1">Ref: {{ source.reference }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% empty %}
+                            <p class="text-gray-500 italic">{% trans "No se requirió pago para este pedido." %}</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if order.billing_address %}
+                        <div class="pt-4 border-t border-gray-100">
+                            <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">{% trans "Facturación" %}</h3>
+                            <address class="not-italic text-gray-800 text-sm">
+                                {% for field in order.billing_address.active_address_fields %}
+                                    {{ field }}<br/>
+                                {% endfor %}
+                            </address>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Contents -->
+        <div class="checkout-shell shadow-sm mb-10 overflow-hidden !bg-white border-gray-100">
+            <div class="sub-header mb-6 flex items-center justify-between">
+                <h2 class="text-xl font-bold flex items-center gap-2 m-0">
+                    <div class="p-2 bg-gray-100 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </div>
+                    {% trans "Resumen de Productos" %}
+                </h2>
+                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                    {{ order.lines.count }} {% trans "Items" %}
+                </span>
+            </div>
+
+            <div class="basket-title hidden md:block !bg-gray-50 !border-gray-200">
+                <div class="row !m-0">
+                    <p class="col-sm-8 h4 !text-gray-500 !text-xs !uppercase !tracking-widest font-bold">{% trans "Producto" %}</p>
+                    <p class="col-sm-2 h4 text-center !text-gray-500 !text-xs !uppercase !tracking-widest font-bold">{% trans "Cantidad" %}</p>
+                    <p class="col-sm-2 h4 text-right !text-gray-500 !text-xs !uppercase !tracking-widest font-bold">{% trans "Total" %}</p>
+                </div>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                {% for line in order.lines.all %}
+                    <div class="py-4 hover:bg-gray-50/50 transition-colors px-2">
+                        <div class="row items-center !m-0">
+                            <div class="col-sm-2 mb-3 md:mb-0">
+                                <div class="w-20 h-20 mx-auto md:mx-0 overflow-hidden rounded-xl border border-gray-100 shadow-sm">
+                                    {% with image=line.product.primary_image %}
+                                        {% oscar_thumbnail image.original "200x200" upscale=False as thumb %}
+                                        <a href="{{ line.product.get_absolute_url }}">
+                                            <img src="{{ thumb.url }}" alt="{{ product.get_title }}" class="w-full h-full object-cover">
+                                        </a>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="col-sm-6 text-center md:text-left">
+                                <h3 class="text-lg font-bold m-0 text-gray-900">
+                                    <a href="{{ line.product.get_absolute_url }}" class="hover:text-red-700 transition-colors">
+                                        {{ line.description }}
+                                    </a>
+                                </h3>
+                                {% if line.upc %}<p class="text-gray-400 text-xs mt-1 uppercase tracking-tighter">SKU: {{ line.upc }}</p>{% endif %}
+                            </div>
+                            <div class="col-sm-2 text-center my-2 md:my-0">
+                                <span class="md:hidden text-gray-400 text-xs uppercase mr-2 font-bold">{% trans "Cant" %}:</span>
+                                <span class="font-bold text-gray-800">x{{ line.quantity }}</span>
+                            </div>
+                            <div class="col-sm-2 text-right">
+                                <p class="price_color text-lg font-bold !text-gray-900 m-0">
+                                    {% if show_tax_separately %}
+                                        {{ line.line_price_before_discounts_excl_tax|currency:order.currency }}
+                                    {% else %}
+                                        {{ line.line_price_before_discounts_incl_tax|currency:order.currency }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Totals Section -->
+            <div class="row mt-10 !m-0">
+                <div class="col-md-6 hidden md:flex items-center justify-center">
+                    <div class="p-8 bg-red-50 rounded-3xl border-2 border-dashed border-red-100 text-center">
+                        <p class="text-red-800 italic font-serif text-xl mb-0">"Grazie per aver scelto la vera pizza siciliana"</p>
+                        <div class="flex justify-center gap-1 mt-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span class="w-2 h-2 rounded-full bg-white"></span>
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 px-0">
+                <br>
+                    <div id="basket_totals" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                            <h2 class="text-sm uppercase tracking-widest font-black text-gray-500 m-0">{% trans 'Resumen de Pago' %}</h2>
+                            <div class="flex gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-white border border-gray-200"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            {% with discounts=order.basket_discounts %}
+                                {% block discount_totals %}
+                                    {% if discounts %}
+                                        <div class="flex justify-between text-sm text-gray-500">
+                                            <span>{% trans "Basket total (before discounts)" %}</span>
+                                            <span>{{ order.basket_total_before_discounts_incl_tax|currency:order.currency }}</span>
+                                        </div>
+                                        {% for discount in discounts %}
+                                            <div class="flex justify-between items-center text-sm text-green-600 font-bold bg-green-50/50 p-2 rounded-lg border border-green-100/50">
+                                                <span class="flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 11h.01M7 15h.01M13 7h.01M13 11h.01M13 15h.01M17 7h.01M17 11h.01M17 15h.01" />
+                                                    </svg>
+                                                    {{ discount.offer }}
+                                                </span>
+                                                <span>- {{ discount.amount|currency:order.currency }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endblock discount_totals %}
+
+                                {% block basket_total %}
+                                    <div class="flex justify-between text-gray-800 font-bold items-center">
+                                        <span class="text-xs uppercase tracking-wider text-gray-400">{% trans "Productos" %}</span>
+                                        <span class="text-lg">
+                                            {% if show_tax_separately %}
+                                                {{ order.basket_total_excl_tax|currency:order.currency }}
+                                            {% else %}
+                                                {{ order.basket_total_incl_tax|currency:order.currency }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                {% endblock basket_total %}
+                            {% endwith %}
+
+                            {% block shipping_total %}
+                                <div class="pt-4 border-t border-gray-100 space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs uppercase tracking-wider text-gray-400 font-bold">{% trans "Envío" %}</span>
+                                            <span class="text-xs text-gray-500 italic">{{ order.shipping_method }}</span>
+                                        </div>
+                                        <span class="text-gray-800 font-bold">
+                                            {% if show_tax_separately %}
+                                                {{ order.shipping_excl_tax|currency:order.currency }}
+                                            {% else %}
+                                                {{ order.shipping_incl_tax|currency:order.currency }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if order.has_shipping_discounts %}
+                                        {% for discount in order.shipping_discounts %}
+                                            <div class="flex justify-between text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
+                                                <span>{{ discount.offer }}</span>
+                                                <span>- {{ discount.amount|currency:order.currency }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            {% endblock shipping_total %}
+
+                            {% block surcharges %}
+                                {% with surcharges=order.surcharges.all %}
+                                    {% if surcharges %}
+                                        <div class="pt-4 border-t border-gray-100 space-y-2">
+                                            {% for charge in surcharges %}
+                                                <div class="flex justify-between text-gray-800 font-bold items-center">
+                                                    <span class="text-xs uppercase tracking-wider text-gray-400">{{ charge.name }}</span>
+                                                    <span>
+                                                        {% if show_tax_separately %}
+                                                            {{ charge.excl_tax|currency:order.currency }}
+                                                        {% else %}
+                                                            {{ charge.incl_tax|currency:order.currency }}
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endblock %}
+
+                            {% if show_tax_separately %}
+                                <div class="flex justify-between text-xs text-gray-400 font-bold pt-4 border-t border-gray-100 uppercase tracking-widest">
+                                    <span>{% trans "Impuestos" %}</span>
+                                    <span>{{ order.total_tax|currency:order.currency }}</span>
+                                </div>
+                            {% endif %}
+
+                            {% block post_order_action_totals %}
+                                {% with actions=order.post_order_actions %}
+                                    {% if actions %}
+                                        <div class="pt-4 border-t border-gray-100 space-y-2">
+                                            {% for action in order.post_order_actions %}
+                                                <div class="p-2 bg-blue-50 text-blue-700 text-xs rounded-lg border border-blue-100 flex gap-2 items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    {{ action.message }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endblock post_order_action_totals %}
+
+                            {% block order_total %}
+                                <div class="pt-6 border-t-2 border-dashed border-gray-100 mt-6">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs uppercase tracking-widest font-black text-gray-400">{% trans "Total a Pagar" %}</span>
+                                            <span class="text-[10px] text-gray-400 font-bold uppercase">{% trans "IVA Incluido" %}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-3xl font-black text-red-600 tracking-tighter drop-shadow-sm">
+                                                {{ order.total_incl_tax|currency:order.currency }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endblock order_total %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not order.user %}
+            <div class="checkout-shell !bg-amber-50 border-amber-200 mb-10 shadow-inner">
+                <div class="flex items-start gap-4">
+                    <div class="p-3 bg-amber-100 rounded-2xl text-amber-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-900 m-0">{% trans "Seguimiento del pedido" %}</h2>
+                        <p class="text-amber-800 mt-1 mb-4">
+                            {% trans "Como has realizado el pedido como invitado, puedes consultar su estado en cualquier momento aquí:" %}
+                        </p>
+                        <a class="btn btn-warning !bg-amber-500 !border-amber-500 !text-white font-bold px-6 rounded-xl hover:!bg-amber-600 transition-colors shadow-sm" href="{% url 'order-tracking' order_number=order.number %}">
+                            {% trans "Ver estado de mi pedido" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="flex flex-col md:flex-row items-center justify-center gap-6 mt-8 pb-10">
+            <a onclick="window.print()" href="#" class="text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                {% trans "Imprimir comprobante" %}
+            </a>
+            <div class="h-1 w-1 bg-gray-300 rounded-full hidden md:block"></div>
+            <a href="{{ homepage_url }}" class="btn btn-primary btn-lg px-12 py-3 rounded-2xl shadow-xl shadow-red-200/50 hover:shadow-red-300/50 hover:-translate-y-1 transition-all !bg-red-600 !border-red-600 font-bold">
+                {% trans "Volver a la tienda" %}
+            </a>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block tracking %}
+    {% if send_analytics_event %}
+        {% include "oscar/partials/google_analytics_transaction.html" %}
+    {% endif %}
+{% endblock %}

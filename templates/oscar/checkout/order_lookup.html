@@ -1,0 +1,44 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans "Consultar Pedido" %} | {{ block.super }}
+{% endblock %}
+
+{% block checkout_title %}{% trans "Consultar mi pedido" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-12">
+    <div class="rounded-artisan bg-white border border-gold-accent/20 shadow-artisan-sm overflow-hidden">
+        <div class="bg-primary-red px-4 py-3">
+            <h3 class="font-display text-lg text-white italic mb-0">{% trans "Buscar mi pedido" %}</h3>
+        </div>
+        <div class="p-8">
+            <form action="{% url 'order-lookup' %}" method="get" class="space-y-6">
+                <div class="space-y-2">
+                    <label for="order_number" class="text-sm font-body italic text-text-secondary">
+                        {% trans "Ingresa tu número de orden, correo electrónico o teléfono" %}
+                    </label>
+                    <input type="text" name="order_number" id="order_number" 
+                        class="w-full h-12 rounded-artisan border border-gold-accent/30 bg-background-cream/30 px-4 text-base outline-none focus:border-primary-red transition-all font-body m-0 appearance-none"
+                        placeholder="{% trans 'Orden, correo o teléfono' %}" 
+                        value="{{ query|default:'' }}"
+                        required>
+                </div>
+                <button type="submit" class="w-full h-12 bg-green-dark text-background-cream rounded-artisan font-display font-bold uppercase tracking-widest text-base hover:bg-green-medium transition-all shadow-md active:scale-95 m-0">
+                    {% trans "Consultar Pedido" %}
+                </button>
+            </form>
+            
+            <div class="mt-8 pt-6 border-t border-gold-accent/10 text-center">
+                <p class="text-sm font-body italic text-text-secondary mb-4">
+                    {% trans "¿Necesitas ayuda con tu pedido?" %}
+                </p>
+                <a href="{{ homepage_url }}" class="text-primary-red hover:underline font-bold text-xs uppercase tracking-widest">
+                    {% trans "Volver al menú" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

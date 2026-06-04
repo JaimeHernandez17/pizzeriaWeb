@@ -1,0 +1,69 @@
+{% extends "oscar/layout.html" %}
+
+{% load i18n %}
+{% load react_assets %}
+
+{% block title %}
+    {{ product.get_meta_title }} | {{ block.super }}
+{% endblock %}
+
+{% block description %}
+    {{ product.get_meta_description }}
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/product-detail.tsx" as react_product_detail_css %}
+    {% for href in react_product_detail_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            {% with category=product.get_categories.first %}
+                {% for c in category.get_ancestors_and_self %}
+                    <li class="text-gold-accent">/</li>
+                    <li class="breadcrumb-item"><a href="{{ c.get_absolute_url }}" class="hover:text-primary-red transition-colors">{{ c.name }}</a></li>
+                {% endfor %}
+                <li class="text-gold-accent">/</li>
+                <li class="breadcrumb-item active" aria-current="page">{{ product.get_title }}</li>
+            {% endwith %}
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+    <div
+        id="react-product-detail-root"
+        data-api-url="{% url 'api-catalog-products' %}"
+        data-product-id="{{ product.id }}"
+        style="position: relative; z-index: 50; display: block;"
+    >
+        {# Fallback content in case React fails to load or for SEO if needed #}
+        <article class="product_page">
+            <div class="row">
+                <div class="col-sm-6">
+                    {% include "oscar/catalogue/partials/gallery.html" %}
+                </div>
+                <div class="col-sm-6 product_main">
+                    <h1>{{ product.get_title }}</h1>
+                    <p>{{ product.description|safe }}</p>
+                </div>
+            </div>
+        </article>
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/product-detail.tsx" as react_product_detail_js %}
+    {% if react_product_detail_js %}
+        <script type="module" src="{{ react_product_detail_js }}"></script>
+    {% endif %}
+{% endblock %}

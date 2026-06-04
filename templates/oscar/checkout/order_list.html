@@ -1,0 +1,58 @@
+{% extends "oscar/checkout/layout.html" %}
+{% load i18n %}
+{% load currency_filters %}
+
+{% block title %}
+    {% trans "Pedidos Encontrados" %} | {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<section class="checkout-tracking-page">
+    <article class="checkout-tracking-card">
+        <header class="checkout-tracking-header">
+            <h1>{% trans "Pedidos relacionados con su búsqueda" %}</h1>
+        </header>
+
+        <p class="checkout-orderlist-hint">
+            {% blocktrans with query=query %}Se han encontrado múltiples pedidos para: <strong>{{ query }}</strong>{% endblocktrans %}
+        </p>
+
+        <div class="checkout-orderlist-table-wrap">
+            <table class="checkout-orderlist-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Número de Pedido" %}</th>
+                        <th>{% trans "Fecha" %}</th>
+                        <th>{% trans "Estado" %}</th>
+                        <th>{% trans "Total" %}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td><strong>#{{ order.number }}</strong></td>
+                            <td>{{ order.date_placed|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="checkout-status-pill">
+                                    {{ order.status|default:"-" }}
+                                </span>
+                            </td>
+                            <td>{{ order.total_incl_tax|currency:order.currency }}</td>
+                            <td class="text-right">
+                                <a href="{% url 'order-tracking' order_number=order.number %}" class="btn btn-secondary btn-sm">
+                                    {% trans "Ver Seguimiento" %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="checkout-tracking-footer">
+            <a href="{% url 'catalogue:index' %}" class="btn btn-secondary">{% trans "Volver a la tienda" %}</a>
+        </footer>
+    </article>
+</section>
+{% endblock %}

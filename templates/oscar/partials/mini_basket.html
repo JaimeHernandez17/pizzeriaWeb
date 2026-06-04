@@ -1,0 +1,35 @@
+{% load currency_filters %}
+{% load i18n %}
+{% load react_assets %}
+
+<div id="react-mini-basket-root"
+     data-api-url="{% url 'api-cart-detail' %}"
+     data-basket-url="{% url 'basket:summary' %}">
+    <div class="basket-mini col-sm-5 text-right d-none d-md-block">
+        <strong>{% trans "Basket total:" %}</strong>
+        {% if request.basket.is_tax_known %}
+            {{ request.basket.total_incl_tax|currency:request.basket.currency }}
+        {% else %}
+            {{ request.basket.total_excl_tax|currency:request.basket.currency }}
+        {% endif %}
+
+        <div class="btn-group">
+          <button type="button" class="{% block mini_basket_btn_classes %}btn btn-outline-secondary{% endblock %}" onclick="window.location.href='{% url 'basket:summary' %}';">{% trans "View basket" %}</button>
+          <button type="button" class="{% block mini_basket_toggle_classes %}btn btn-outline-secondary dropdown-toggle dropdown-toggle-split{% endblock %}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="sr-only">Toggle Dropdown</span>
+          </button>
+          <div class="{% block mini_basket_dropdown_classes %}dropdown-menu dropdown-menu-right{% endblock %}">
+            {% include "oscar/basket/partials/basket_quick.html" %}
+          </div>
+        </div>
+    </div>
+</div>
+
+{% react_asset "src/entries/mini-basket.tsx" as react_mini_basket_js %}
+{% if react_mini_basket_js %}
+    <script type="module" src="{{ react_mini_basket_js }}"></script>
+{% endif %}
+{% react_css_assets "src/entries/mini-basket.tsx" as react_mini_basket_css %}
+{% for href in react_mini_basket_css %}
+    <link rel="stylesheet" href="{{ href }}">
+{% endfor %}

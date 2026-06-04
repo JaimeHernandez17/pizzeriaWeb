@@ -1,0 +1,173 @@
+{% extends "oscar/layout_2_col.html" %}
+
+{% load basket_tags %}
+{% load category_tags %}
+{% load product_tags %}
+{% load i18n %}
+{% load react_assets %}
+
+{% block title %}
+    {% if summary %}{{ summary }} |{% endif %} {{ block.super }}
+{% endblock %}
+
+{% block headertext %}{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    {% react_css_assets "src/entries/catalogue.tsx" as react_catalogue_css %}
+    {% for href in react_catalogue_css %}
+        <link rel="stylesheet" href="{{ href }}">
+    {% endfor %}
+{% endblock %}
+
+{% block breadcrumbs %}
+    {% if category or query %}
+    <nav aria-label="breadcrumb">
+        <ol class="flex list-none p-0 font-body text-xs uppercase tracking-widest text-text-secondary gap-2 mb-4">
+            <li class="breadcrumb-item"><a href="{{ homepage_url }}" class="hover:text-primary-red transition-colors">{% trans "Home" %}</a></li>
+            <li class="text-gold-accent">/</li>
+            <li class="breadcrumb-item active" aria-current="page">{% if category %}{{ category.name }}{% else %}"{{ query }}"{% endif %}</li>
+        </ol>
+    </nav>
+    {% endif %}
+{% endblock breadcrumbs %}
+
+{% block column_left %}
+    <div class="rounded-artisan bg-white border border-gold-accent/20 shadow-artisan-sm overflow-hidden mb-8">
+        <div class="bg-primary-red px-4 py-3">
+            <h3 class="font-display text-lg text-white italic mb-0">{% trans "Buscar mi pedido" %}</h3>
+        </div>
+        <div class="p-5">
+            <form action="{% url 'order-lookup' %}" method="get" class="space-y-3">
+                <input type="text" name="order_number" id="order_number" 
+                    class="w-full h-10 rounded-artisan border border-gold-accent/30 bg-background-cream/30 px-4 text-sm outline-none focus:border-primary-red transition-all font-body m-0 appearance-none" 
+                    placeholder="{% trans 'Orden, correo o teléfono' %}" required>
+                <button type="submit" class="w-full h-10 bg-green-dark text-background-cream rounded-artisan font-display font-bold uppercase tracking-widest text-sm hover:bg-green-medium transition-all shadow-sm active:scale-95 m-0">{% trans "Consultar" %}</button>
+            </form>
+        </div>
+    </div>
+
+    {% category_tree as tree_categories %}
+    {% if tree_categories %}
+        <div class="space-y-4">
+            <h4 class="font-display text-2xl text-text-primary italic border-l-4 border-primary-red pl-4">
+                {% trans "Categorías" %}
+            </h4>
+
+            <div class="rounded-artisan bg-white border border-brand-accent-gold/20 p-6 shadow-artisan-sm">
+                <ul class="space-y-3 font-body text-base">
+                    {% for tree_category in tree_categories %}
+                        <li>
+                            <a href="{{ tree_category.url }}"
+                               class="hover:text-primary-red transition-colors flex items-center justify-between group">
+
+                                {% if tree_category.pk == category.pk %}
+                                    <strong class="text-primary-red">{{ tree_category.name }}</strong>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-red"></span>
+                                {% else %}
+                                    <span class="text-text-secondary group-hover:translate-x-1 transition-transform inline-block">
+                                        {{ tree_category.name }}
+                                    </span>
+                                {% endif %}
+                            </a>
+
+                            {% if tree_category.has_children %}
+                                <ul class="ml-4 mt-2 space-y-2 border-l border-brand-accent-gold/20 pl-4 text-sm">
+                            {% endif %}
+
+                        {% for n in tree_category.num_to_close %}
+                                </ul>
+                            </li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% with results=products|default:page_obj.object_list|default:object_list %}
+    {% with hide_price_for_children=True %}
+    <div
+        id="react-catalogue-root"
+        class="mb-12 relative z-50"
+        data-api-url="{% url 'api-catalog-products' %}"
+        data-initial-query="{{ request.GET.q|default_if_none:'' }}"
+        data-initial-page="{{ page_obj.number|default:1 }}"
+        data-fallback-target-id="catalogue-legacy-results"
+    ></div>
+
+    <div id="catalogue-legacy-results" class="space-y-8">
+        <header class="flex items-center justify-between border-b border-gold-accent/20 pb-4">
+            <h2 class="font-display text-3xl text-text-primary italic">{% if category %}{{ category.name }}{% else %}{% trans "Nuestro Menú" %}{% endif %}</h2>
+            <div class="text-sm font-body italic text-text-secondary">
+                {% if paginator.count %}
+                    {% blocktrans count num_results=paginator.count %}
+                        <strong>{{ num_results }}</strong> producto.
+                    {% plural %}
+                        <strong>{{ num_results }}</strong> productos.
+                    {% endblocktrans %}
+                {% endif %}
+            </div>
+        </header>
+
+        {% if results %}
+            <section>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {% for product in results %}
+                        <article class="rounded-artisan bg-white border border-gold-accent/20 shadow-artisan-sm hover:shadow-artisan-md transition-all overflow-hidden flex flex-col group">
+                            <div class="aspect-square bg-background-warm/30 overflow-hidden">
+                                {% with image=product.primary_image %}
+                                    {% if image %}
+                                        <img src="{{ image.original.url }}" alt="{{ product.get_title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center text-gold-accent/30 font-display italic">No image</div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="p-6 flex flex-col flex-grow space-y-3">
+                                <h3 class="font-display text-xl text-text-primary group-hover:text-primary-red transition-colors">
+                                    <a href="{{ product.get_absolute_url }}">{{ product.get_title }}</a>
+                                </h3>
+                                <p class="text-sm font-body italic text-text-secondary line-clamp-2 flex-grow">
+                                    {{ product.description|default:""|striptags }}
+                                </p>
+                                <div class="pt-4 flex items-center justify-between border-t border-gold-accent/10">
+                                    <span class="font-display text-2xl font-bold text-primary-red">
+                                        {% render_product product %}
+                                    </span>
+                                    <a href="{{ product.get_absolute_url }}" class="bg-green-dark text-background-cream px-4 py-2 rounded-artisan font-display font-bold uppercase tracking-widest text-[10px] hover:bg-green-medium transition-all">
+                                        {% trans "Ver más" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+                <div class="mt-12 flex justify-center">
+                    {% include "oscar/partials/pagination.html" %}
+                </div>
+            </section>
+        {% else %}
+            <div class="rounded-artisan bg-background-warm/10 border-2 border-dashed border-gold-accent/30 p-12 text-center">
+                <p class="font-display text-xl text-text-secondary italic">{% trans "No se encontraron productos." %}</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endwith %}
+{% endblock content %}
+
+{% block onbodyload %}
+    {{ block.super }}
+    oscar.search.init();
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% react_asset "src/entries/catalogue.tsx" as react_catalogue_js %}
+    {% if react_catalogue_js %}
+        <script type="module" src="{{ react_catalogue_js }}"></script>
+    {% endif %}
+{% endblock %}
